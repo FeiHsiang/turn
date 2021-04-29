@@ -4,13 +4,34 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>My PDF Viewer</title>
-  <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.0.943/pdf.min.js">
-  </script>
+  <title>PDF Viewer</title>
+  <script src="./js/pdf.min.js"></script>
+  <!-- <script src="./js/pdf.js"></script> -->
+ 
+  <script type="text/javascript" src="./js/jquery-1.7.1.min.js"></script>
+
+  <!-- <script type="text/javascript" src="../../turn.js"></script> -->
+  <script type="text/javascript" src="js/turnjs4/turn.js"></script>
+
+
+  <link rel="icon" type="image/jpg" href="sci.jpeg" >
+
+  <link href="./turnStyle.css" rel="stylesheet" type="text/css">
+
 </head>
 <body>
-     <div id="my_pdf_viewer">
+
+    <script src="js/vconsole.min.js"></script>
+	<script>
+		if ( window.navigator.userAgent.toLowerCase().indexOf("mobile") >= 0 && window.navigator.userAgent.toLowerCase().indexOf("chrome") < 0 ){
+			var vConsole = new VConsole();
+			console.log("The system is mobile: ", window.navigator.userAgent.toLowerCase() );
+		}else{
+			console.log("The system is PC: ", window.navigator.userAgent.toLowerCase() );
+        }
+    </script>
+
+     <div id="my_pdf_viewer" style="display: none;">
         <div id="canvas_container">
             <canvas id="pdf_renderer"></canvas>
         </div>
@@ -27,6 +48,10 @@
         </div>
     </div>
  
+    <br>
+    <hr>
+    <div id="pdfDiv"></div>
+
     <script>
         var myState = {
             pdf: null,
@@ -34,15 +59,98 @@
             zoom: 1
         }
       
-        pdfjsLib.getDocument('./rr.pdf').then((pdf) => {
+        pdfjsLib.getDocument('./open.pdf').then((pdf) => {
             
-            
+            createPDFDiv(pdf);
 
             myState.pdf = pdf;
-            render();
+            // render();
  
         });
  
+        function createPDFDiv(pdf){
+            
+            let pdfDiv = document.getElementById('pdfDiv');
+            let scaleRatio = 1;
+
+            console.log("_createPDFDiv: 0", pdf );
+
+            for (let i = 0, len=pdf._pdfInfo.numPages; i < len; i++ ){
+                
+                
+                pdf.getPage( i+1 ).then( (page) =>{
+
+                    //// 以第一頁面的比例為基礎，外部設定的 pdfDiv width 為標準，重設 height 
+                    if (i == 0){
+                        // for single
+                        scaleRatio = pdfDiv.clientWidth/page._pageInfo.view[2];
+                        pdfDiv.style.height = scaleRatio*page._pageInfo.view[3] + "px";
+
+                        // for double 
+                        // scaleRatio = pdfDiv.clientWidth/page._pageInfo.view[2]/2;
+                        // pdfDiv.style.height = scaleRatio*page._pageInfo.view[3] + "px";
+                        
+                        // pageContainer.className = "hard";
+                        // console.log("_createPDFDiv: 1 ", pdf, page , scaleRatio );
+
+                    }
+
+                    console.log("_createPDFDiv: 1 ", pdf, page , scaleRatio );
+
+                    let pageContainer = document.createElement('div');
+                    let pdfCanvas = document.createElement('canvas');
+                    
+                    pageContainer.appendChild(pdfCanvas);
+                    pdfDiv.appendChild(pageContainer);
+
+
+                    let ctx = pdfCanvas.getContext('2d');
+                    var viewport = page.getViewport( scaleRatio );
+
+                    pdfCanvas.width = viewport.width + 0;
+                    pdfCanvas.height = viewport.height + 0;
+
+                    
+                    let task = page.render({
+                        canvasContext: ctx,
+                        viewport: viewport
+                    });
+
+                    //// 不太確定為什麼，但是 iphone上面直接使用 canvas 會有首次載入不 update 的問題
+                    task.promise.then(function(e){
+                        console.log("e=", e);
+                        // let dataURL = pdfCanvas.toDataURL();
+                        // pageContainer.style.backgroundImage = "url(" + dataURL + ")";
+                    });
+
+
+                    if (i == len - 1){
+
+                        // $('#pdfDiv').turn({
+                        //     display: 'single',
+                        //     // display: 'double',
+                        //     // autoCenter: true,
+						// 	acceleration: true,
+                        //     gradients: true,
+                        //     // gradients: !$.isTouch,
+						// 	elevation: 50,
+						// 	when: {
+						// 		turned: function(e, page) {
+						// 			// console.log('Current view: ', $(this).turn('view'));
+						// 		}
+						// 	}
+						// });
+
+                    }
+
+                });
+
+            }
+
+            
+
+        }
+
         function render() {
             myState.pdf.getPage(myState.currentPage).then((page) => {
           

@@ -1831,8 +1831,15 @@ flipMethods = {
 		if (!data.disabled && data.point) {
 			var event = $.Event('released');
 			this.trigger(event, [data.point]);
-			if (!event.isDefaultPrevented())
+			if (!event.isDefaultPrevented()){
+				//// 翻頁翻一半放下
+				console.log(" --- _eventEnd 1");
 				flipMethods.hideFoldedPage.call(this, true);
+			}else{
+				//// 翻頁完成
+				console.log(" --- _eventEnd 2");
+				
+			}
 		}
 
 		data.corner = null;
@@ -1850,7 +1857,6 @@ flipMethods = {
 cla = function(that, methods, args) {
 
 	if (!args[0] || typeof(args[0])=='object'){
-		console.log("1 ", that, methods, args );
 		return methods.init.apply(that, args);
 	}
 	else if(methods[args[0]] && args[0].toString().substr(0, 1)!='_'){
