@@ -257,8 +257,10 @@ turnMethods = {
 				if (has(i, opts.when))
 					this.bind(i, opts.when[i]);
 
-
-		this.css({position: 'relative', width: opts.width, height: opts.height});
+//[start-20210427-fei 0001 -mod]//
+		// this.css({position: 'relative', width: opts.width, height: opts.height});
+		this.css({position: 'absolute', width: opts.width, height: opts.height});
+//[end---20210427-fei 0001 -mod]//
 
 		this.turn('display', opts.display);
 
@@ -1829,8 +1831,15 @@ flipMethods = {
 		if (!data.disabled && data.point) {
 			var event = $.Event('released');
 			this.trigger(event, [data.point]);
-			if (!event.isDefaultPrevented())
+			if (!event.isDefaultPrevented()){
+				//// 翻頁翻一半放下
+				console.log(" --- _eventEnd 1");
 				flipMethods.hideFoldedPage.call(this, true);
+			}else{
+				//// 翻頁完成
+				console.log(" --- _eventEnd 2");
+				
+			}
 		}
 
 		data.corner = null;
@@ -1847,12 +1856,15 @@ flipMethods = {
 
 cla = function(that, methods, args) {
 
-	if (!args[0] || typeof(args[0])=='object')
+	if (!args[0] || typeof(args[0])=='object'){
 		return methods.init.apply(that, args);
-	else if(methods[args[0]] && args[0].toString().substr(0, 1)!='_')
+	}
+	else if(methods[args[0]] && args[0].toString().substr(0, 1)!='_'){
 		return methods[args[0]].apply(that, Array.prototype.slice.call(args, 1));
-	else
+	}
+	else{
 		throw args[0] + ' is an invalid value';
+	}
 };
 
 $.extend($.fn, {
