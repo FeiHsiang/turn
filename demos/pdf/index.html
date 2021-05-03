@@ -70,6 +70,16 @@
             // render();
  
         });
+
+        function randomString(){
+            let strList = "abcdefghijklmnopqrstuvwxyz0123456789";
+            let out = "";
+            for (let i = 0; i < 10;i++){
+                let r = Math.round(Math.random()*strList.length) - 1;
+                out += strList[r];
+            }
+            return out;
+        }
  
         function createPDFDiv(pdf){
             
@@ -105,7 +115,9 @@
 
                     let pageContainer = document.createElement('div');
                     let pdfCanvas = document.createElement('canvas');
-                    
+
+                    pdfCanvas.setAttribute('id', randomString() );
+
                     pageContainer.appendChild(pdfCanvas);
                     pdfDiv.appendChild(pageContainer);
 
@@ -117,29 +129,41 @@
                     pdfCanvas.height = viewport.height + 0;
 
 
-                    let timeoutID = setInterval(function () {
-                        if (i == loadedPage ) {
+                    // let timeoutID = setInterval(function () {
+                    //     if (i == loadedPage ) {
                             
-                            window.clearInterval(timeoutID);
+                    //         window.clearInterval(timeoutID);
 
-                            let task = page.render({
-                                canvasContext: ctx,
-                                viewport: viewport,
-                                enableWebGL: true,
-                            });
+                    //         let task = page.render({
+                    //             canvasContext: ctx,
+                    //             viewport: viewport,
+                    //             enableWebGL: true,
+                    //         });
 
-                            //// 不太確定為什麼，但是 iphone上面直接使用 canvas 會有首次載入不 update 的問題
-                            task.promise.then(function(e){
-                                loadedPage += 1;
-                                console.log("e=", i , loadedPage );
-                                let dataURL = pdfCanvas.toDataURL();
-                                pageContainer.style.backgroundImage = "url(" + dataURL + ")";
-                            });
+                    //         //// 不太確定為什麼，但是 iphone上面直接使用 canvas 會有首次載入不 update 的問題
+                    //         task.promise.then(function(e){
+                    //             loadedPage += 1;
+                    //             console.log("e=", i , loadedPage );
+                    //             let dataURL = pdfCanvas.toDataURL();
+                    //             pageContainer.style.backgroundImage = "url(" + dataURL + ")";
+                    //         });
 
-                        }
-                    }, 1000);
+                    //     }
+                    // }, 10);
                     
+                    let task = page.render({
+                        canvasContext: ctx,
+                        viewport: viewport,
+                        enableWebGL: true,
+                    });
 
+                    //// 不太確定為什麼，但是 iphone上面直接使用 canvas 會有首次載入不 update 的問題
+                    task.promise.then(function(e){
+                        loadedPage += 1;
+                        // console.log("e=", i , loadedPage );
+                        let dataURL = pdfCanvas.toDataURL();
+                        pageContainer.style.backgroundImage = "url(" + dataURL + ")";
+                    });
                     
 
 
@@ -170,6 +194,25 @@
 
             
 
+        }
+
+        //// 為了解決在 ios 系統上重複載入頁面會造成 canvas 的記憶體滿載問題
+        //// Total canvas memory use exceeds the maximum limit (Safari 12)
+        //// 檢查發現在 ios 『重新整理頁面』並不會觸發『 onbeforeunload 』 只會觸發『onunload』所以在此搜尋所有 canvas 然後將其清除
+        //// 確認有效。假如是原本頁面已經滿載，再清除就會沒有效果，需要切換畫面離開頁面再回來才可以。
+        window.onunload = function(){
+            let canvases = document.getElementsByTagName("canvas");
+            console.log(" 1 onunload " );          
+
+            while( canvases[0] ){
+                canvases[0].width = 0;
+                canvases[0].height = 0;
+                canvases[0].remove();
+            }
+        }
+
+        window.onbeforeunload = function(){
+  
         }
 
         function render() {
