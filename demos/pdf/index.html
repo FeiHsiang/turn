@@ -24,7 +24,7 @@
     <script src="js/vconsole.min.js"></script>
 	<script>
 		if ( window.navigator.userAgent.toLowerCase().indexOf("mobile") >= 0 && window.navigator.userAgent.toLowerCase().indexOf("chrome") < 0 ){
-			var vConsole = new VConsole();
+			// var vConsole = new VConsole();
 			console.log("The system is mobile: ", window.navigator.userAgent.toLowerCase() );
 		}else{
 			console.log("The system is PC: ", window.navigator.userAgent.toLowerCase() );
@@ -59,7 +59,10 @@
             zoom: 1
         }
       
-        pdfjsLib.getDocument('./open.pdf').then((pdf) => {
+        pdfjsLib.getDocument( {
+            url:'./open.pdf',
+            rangeChunkSize: 1024,
+        }).then((pdf) => {
             
             createPDFDiv(pdf);
 
@@ -73,10 +76,13 @@
             let pdfDiv = document.getElementById('pdfDiv');
             let scaleRatio = 1;
 
+            let loadedPage = 0, pageCount = 50 ;    
+
             console.log("_createPDFDiv: 0", pdf );
 
             for (let i = 0, len=pdf._pdfInfo.numPages; i < len; i++ ){
                 
+                if (i > pageCount ) break;
                 
                 pdf.getPage( i+1 ).then( (page) =>{
 
@@ -95,7 +101,7 @@
 
                     }
 
-                    console.log("_createPDFDiv: 1 ", pdf, page , scaleRatio );
+                    // console.log("_createPDFDiv: 1 ", pdf, page , scaleRatio );
 
                     let pageContainer = document.createElement('div');
                     let pdfCanvas = document.createElement('canvas');
@@ -110,22 +116,37 @@
                     pdfCanvas.width = viewport.width + 0;
                     pdfCanvas.height = viewport.height + 0;
 
+
+                    let timeoutID = setInterval(function () {
+                        if (i == loadedPage ) {
+                            
+                            window.clearInterval(timeoutID);
+
+                            let task = page.render({
+                                canvasContext: ctx,
+                                viewport: viewport,
+                                enableWebGL: true,
+                            });
+
+                            //// 不太確定為什麼，但是 iphone上面直接使用 canvas 會有首次載入不 update 的問題
+                            task.promise.then(function(e){
+                                loadedPage += 1;
+                                console.log("e=", i , loadedPage );
+                                let dataURL = pdfCanvas.toDataURL();
+                                pageContainer.style.backgroundImage = "url(" + dataURL + ")";
+                            });
+
+                        }
+                    }, 1000);
                     
-                    let task = page.render({
-                        canvasContext: ctx,
-                        viewport: viewport
-                    });
 
-                    //// 不太確定為什麼，但是 iphone上面直接使用 canvas 會有首次載入不 update 的問題
-                    task.promise.then(function(e){
-                        console.log("e=", e);
-                        // let dataURL = pdfCanvas.toDataURL();
-                        // pageContainer.style.backgroundImage = "url(" + dataURL + ")";
-                    });
+                    
 
 
-                    if (i == len - 1){
 
+                    if (i == pageCount ){
+
+                        // // 最後一張 pdf 載入完成後再啟動(turn)
                         // $('#pdfDiv').turn({
                         //     display: 'single',
                         //     // display: 'double',
