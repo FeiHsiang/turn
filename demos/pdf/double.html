@@ -1,0 +1,297 @@
+<!doctype html>
+  
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PDF Viewer</title>
+  <script src="./js/pdf.min.js"></script>
+  <!-- <script src="./js/pdf.js"></script> -->
+ 
+  <script type="text/javascript" src="./js/jquery-1.7.1.min.js"></script>
+
+  <!-- <script type="text/javascript" src="../../turn.js"></script> -->
+  <script type="text/javascript" src="js/turnjs4/turn.js"></script>
+
+
+  <link rel="icon" type="image/jpg" href="sci.jpeg" >
+
+  <link href="./turnStyle.css" rel="stylesheet" type="text/css">
+
+</head>
+<body>
+
+    <script src="js/vconsole.min.js"></script>
+	<script>
+		if ( window.navigator.userAgent.toLowerCase().indexOf("mobile") >= 0 && window.navigator.userAgent.toLowerCase().indexOf("chrome") < 0 ){
+			// var vConsole = new VConsole();
+			console.log("The system is mobile: ", window.navigator.userAgent.toLowerCase() );
+		}else{
+			console.log("The system is PC: ", window.navigator.userAgent.toLowerCase() );
+        }
+    </script>
+
+     <div id="my_pdf_viewer" style="display: none;">
+        <div id="canvas_container">
+            <canvas id="pdf_renderer"></canvas>
+        </div>
+ 
+        <div id="navigation_controls">
+            <button id="go_previous">Previous</button>
+            <input id="current_page" value="1" type="number"/>
+            <button id="go_next">Next</button>
+        </div>
+ 
+        <div id="zoom_controls">  
+            <button id="zoom_in">+</button>
+            <button id="zoom_out">-</button>
+        </div>
+    </div>
+ 
+    <br>
+    <hr>
+    <div id="pdfDiv"></div>
+
+    <script>
+        var myState = {
+            pdf: null,
+            currentPage: 1,
+            zoom: 1
+        }
+      
+        pdfjsLib.getDocument( {
+            // url:'./open.pdf',
+            url:'./cpvc-pipe.pdf',
+            rangeChunkSize: 1024,
+        }).then((pdf) => {
+            
+            createPDFDiv(pdf);
+
+            myState.pdf = pdf;
+            // render();
+ 
+        });
+
+        function randomString(){
+            let strList = "abcdefghijklmnopqrstuvwxyz0123456789";
+            let out = "";
+            for (let i = 0; i < 10;i++){
+                let r = Math.round(Math.random()*strList.length) - 1;
+                out += strList[r];
+            }
+            return out;
+        }
+ 
+        function createPDFDiv(pdf){
+            
+            let pdfDiv = document.getElementById('pdfDiv');
+            // pdfDiv.style.width = "2000px";
+            let scaleRatio = 1;
+
+            let loadedPage = 0, pageCount = 30 ;    
+
+            console.log("_createPDFDiv: 0", pdf );
+
+            for (let i = 0, len = pdf._pdfInfo.numPages; i < len; i++ ){
+                
+                if (i > pageCount ) break;
+                
+                pdf.getPage( i+1 ).then( (page) =>{
+
+                    //// 以第一頁面的比例為基礎，外部設定的 pdfDiv width 為標準，重設 height 
+                    if (i == 0){
+                        // for single
+                        
+
+                        if (window.navigator.userAgent.toLowerCase().indexOf("mobile") < 0){
+                            /// PC 端
+                            scaleRatio = pdfDiv.clientWidth/page._pageInfo.view[2]/2;
+                            pdfDiv.style.height = scaleRatio*page._pageInfo.view[3] + "px";
+
+                            console.log("_createPDFDiv: 1 ",  page._pageInfo.view , scaleRatio , innerHeight*0.9/scaleRatio/page._pageInfo.view[3] );
+
+                            //// 判斷高度是否超過 0.9 螢幕高
+                            if ( scaleRatio*page._pageInfo.view[3] > innerHeight*0.9 ){
+
+                                // scaleRatio = innerHeight*0.9 /page._pageInfo.view[3];
+                                // pdfDiv.style.width = scaleRatio * page._pageInfo.view[2] + "px";
+                                // pdfDiv.style.height = innerHeight*0.9 + "px";
+
+                                // document.body.style.zoom = innerHeight*0.9/scaleRatio/page._pageInfo.view[3];
+
+                            }
+
+                        }else{
+                            // 手機端
+                            scaleRatio = pdfDiv.clientWidth/page._pageInfo.view[2]/2;
+                            pdfDiv.style.height = scaleRatio*page._pageInfo.view[3] + "px";
+
+                            // document.body.style.zoom = innerHeight*0.7/scaleRatio/page._pageInfo.view[3];
+                        }
+
+                        // for double 
+                        // scaleRatio = pdfDiv.clientWidth/page._pageInfo.view[2]/2;
+                        // pdfDiv.style.height = scaleRatio*page._pageInfo.view[3] + "px";
+                        
+                        // pageContainer.className = "hard";
+                        // console.log("_createPDFDiv: 1 ", pdf, page , scaleRatio );
+
+                    }
+
+                    // console.log("_createPDFDiv: 1 ", pdf, page , scaleRatio );
+
+                    let pageContainer = document.createElement('div');
+                    let pdfCanvas = document.createElement('canvas');
+
+                    pdfCanvas.setAttribute('id', randomString() );
+
+                    pageContainer.appendChild(pdfCanvas);
+                    pdfDiv.appendChild(pageContainer);
+
+
+                    let ctx = pdfCanvas.getContext('2d');
+                    var viewport = page.getViewport( scaleRatio );
+
+                    pdfCanvas.width = viewport.width + 0;
+                    pdfCanvas.height = viewport.height + 0;
+
+                    let task = page.render({
+                        canvasContext: ctx,
+                        viewport: viewport,
+                        enableWebGL: true,
+                    });
+
+                    //// 不太確定為什麼，但是 iphone上面直接使用 canvas 會有首次載入不 update 的問題
+                    task.promise.then(function(e){
+                        loadedPage += 1;
+                        // console.log("e=", i , loadedPage );
+                        let dataURL = pdfCanvas.toDataURL();
+                        pageContainer.style.backgroundImage = "url(" + dataURL + ")";
+
+                        pdfCanvas.width = 0;
+                        pdfCanvas.height = 0;
+                        pdfCanvas.remove();
+                        
+                    });
+                    
+
+
+
+                    if (i == pageCount || i == pdf._pdfInfo.numPages-1 ){
+
+                        // // 最後一張 pdf 載入完成後再啟動(turn)
+                        $('#pdfDiv').turn({
+                            // display: 'single',
+                            display: 'double',
+                            // autoCenter: true,
+							acceleration: true,
+                            gradients: true,
+                            // gradients: !$.isTouch,
+							elevation: 50,
+							when: {
+								turned: function(e, page) {
+									// console.log('Current view: ', $(this).turn('view'));
+								}
+							}
+						});
+
+                    }
+
+                });
+
+            }
+
+            
+
+        }
+
+        //// 為了解決在 ios 系統上重複載入頁面會造成 canvas 的記憶體滿載問題
+        //// Total canvas memory use exceeds the maximum limit (Safari 12)
+        //// 檢查發現在 ios 『重新整理頁面』並不會觸發『 onbeforeunload 』 只會觸發『onunload』所以在此搜尋所有 canvas 然後將其清除
+        //// 確認有效。假如是原本頁面已經滿載，再清除就會沒有效果，需要切換畫面離開頁面再回來才可以。
+        window.onunload = function(){
+            let canvases = document.getElementsByTagName("canvas");
+            console.log(" 1 onunload " );          
+
+            while( canvases[0] ){
+                canvases[0].width = 0;
+                canvases[0].height = 0;
+                canvases[0].remove();
+            }
+        }
+
+        window.onbeforeunload = function(){
+  
+        }
+
+        function render() {
+            myState.pdf.getPage(myState.currentPage).then((page) => {
+          
+                var canvas = document.getElementById("pdf_renderer");
+                var ctx = canvas.getContext('2d');
+      
+                var viewport = page.getViewport(myState.zoom);
+ 
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+          
+                page.render({
+                    canvasContext: ctx,
+                    viewport: viewport
+                });
+            });
+        }
+
+        document.getElementById('go_previous').addEventListener('click', (e) => {
+            if(myState.pdf == null || myState.currentPage == 1) 
+              return;
+            myState.currentPage -= 1;
+            document.getElementById("current_page").value = myState.currentPage;
+            render();
+        });
+ 
+        document.getElementById('go_next').addEventListener('click', (e) => {
+            if(myState.pdf == null || myState.currentPage >= myState.pdf._pdfInfo.numPages) 
+               return;
+            myState.currentPage += 1;
+            document.getElementById("current_page").value = myState.currentPage;
+            render();
+        });
+ 
+        document.getElementById('current_page').addEventListener('keypress', (e) => {
+            if(myState.pdf == null) return;
+          
+            // Get key code
+            var code = (e.keyCode ? e.keyCode : e.which);
+          
+            // If key code matches that of the Enter key
+            if(code == 13) {
+                var desiredPage = 
+                document.getElementById('current_page').valueAsNumber;
+                                  
+                if(desiredPage >= 1 && desiredPage <= myState.pdf._pdfInfo.numPages) {
+                    myState.currentPage = desiredPage;
+                    document.getElementById("current_page").value = desiredPage;
+                    render();
+                }
+            }
+        });
+ 
+        document.getElementById('zoom_in').addEventListener('click', (e) => {
+            if(myState.pdf == null) return;
+            myState.zoom += 0.5;
+            render();
+        });
+ 
+        document.getElementById('zoom_out').addEventListener('click', (e) => {
+            if(myState.pdf == null) return;
+            myState.zoom -= 0.5;
+            render();
+        });
+
+
+
+
+    </script>
+</body>
+</html>

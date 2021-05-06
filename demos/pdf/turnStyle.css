@@ -1,5 +1,7 @@
 body{
     /* overflow:hidden; */
+    min-width: 1600px;
+    /* width: 1500px; */
     height: 300vh;
 }
 
@@ -73,16 +75,16 @@ body{
     height:776px;
 
     width:1200px;
-    height:1552px;
+    /* height:1552px; */
 
     /* width:1800px; */
     /* height:2228px; */
 
 
-    /* max-width: 95vw; */
+    /* max-width: 85vw; */
 
     position: absolute;
-    left: 2%;
+    left: 5%;
     /* top: 90%; */
 
     border: solid 2px;
