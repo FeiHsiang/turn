@@ -1,8 +1,8 @@
 body{
     /* overflow:hidden; */
-    min-width: 1600px;
+    /* min-width: 1600px; */
     /* width: 1500px; */
-    height: 300vh;
+    /* height: 200vh; */
 }
 
 
@@ -63,6 +63,10 @@ body{
     box-shadow:inset 0 0 5px #666;
 }
 
+.cimage{
+    transform: scale( 0.5 );
+    transform-origin: 0 0;
+}
 
 #pdfDiv{
     width:1224px;
@@ -75,10 +79,8 @@ body{
     height:776px;
 
     width:1200px;
-    /* height:1552px; */
+    /* width:2400px; */
 
-    /* width:1800px; */
-    /* height:2228px; */
 
 
     /* max-width: 85vw; */

@@ -50,7 +50,9 @@
  
     <br>
     <hr>
-    <div id="pdfDiv"></div>
+    <div id = pdfContainerDiv>
+        <div id="pdfDiv"></div>
+    </div>
 
     <script>
         var myState = {
@@ -109,17 +111,6 @@
 
                             console.log("_createPDFDiv: 1 ",  page._pageInfo.view , scaleRatio , innerHeight*0.9/scaleRatio/page._pageInfo.view[3] );
 
-                            //// 判斷高度是否超過 0.9 螢幕高
-                            if ( scaleRatio*page._pageInfo.view[3] > innerHeight*0.9 ){
-
-                                // scaleRatio = innerHeight*0.9 /page._pageInfo.view[3];
-                                // pdfDiv.style.width = scaleRatio * page._pageInfo.view[2] + "px";
-                                // pdfDiv.style.height = innerHeight*0.9 + "px";
-
-                                // document.body.style.zoom = innerHeight*0.9/scaleRatio/page._pageInfo.view[3];
-
-                            }
-
                         }else{
                             // 手機端
                             scaleRatio = pdfDiv.clientWidth/page._pageInfo.view[2];
@@ -127,10 +118,6 @@
 
                             // document.body.style.zoom = innerHeight*0.7/scaleRatio/page._pageInfo.view[3];
                         }
-
-                        // for double 
-                        // scaleRatio = pdfDiv.clientWidth/page._pageInfo.view[2]/2;
-                        // pdfDiv.style.height = scaleRatio*page._pageInfo.view[3] + "px";
                         
                         // pageContainer.className = "hard";
                         // console.log("_createPDFDiv: 1 ", pdf, page , scaleRatio );
@@ -165,7 +152,14 @@
                         loadedPage += 1;
                         // console.log("e=", i , loadedPage );
                         let dataURL = pdfCanvas.toDataURL();
-                        pageContainer.style.backgroundImage = "url(" + dataURL + ")";
+
+                        // pageContainer.style.backgroundImage = "url(" + dataURL + ")";
+                        // pageContainer.style.backgroundSize = "1200px 1697px";
+
+                        let img = document.createElement('img');
+                        img.className = 'cimage';
+                        img.src = dataURL;
+                        pageContainer.appendChild( img );
 
                         pdfCanvas.width = 0;
                         pdfCanvas.height = 0;
@@ -176,6 +170,9 @@
 
 
                     if (i == pageCount || i == pdf._pdfInfo.numPages-1 ){
+
+                        pdfDiv.style.width = '600px';
+                        pdfDiv.style.height = '849px';
 
                         // // 最後一張 pdf 載入完成後再啟動(turn)
                         $('#pdfDiv').turn({
